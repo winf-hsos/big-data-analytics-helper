@@ -1,0 +1,12 @@
+body {
+  /* Set default font */
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+i:hover {
+  color: red;
+}
+
+.toast {
+  width: 300px;
+}
