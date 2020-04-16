@@ -43,11 +43,13 @@
           <input type="password" class="form-control" id="password" placeholder="Password" />
         </div>
 
-        <div>Noch keinen Account? <a href="register.html">Registrieren!</a></div>
+        <div>Noch keinen Account? <a href="register.html">Registrieren</a>!</div>
 
         <div class="form-group text-left">
           <button class="btn btn-primary" onclick="login()">Login</button>
         </div>
+
+        <p id="errorMessage" style="color: red;"></p>
 
 
       </div>
@@ -142,14 +144,12 @@
 
         <div class="mb-8 text-justify">
           <p>
-            Du wurdest noch keiner Gruppe zugeordnet. Warte auf deine Freischaltung und die Zuordnung zu einer Gruppe. Um den Prozess zu beschleunigen kannst du Nicolas aus Slack eine Nachricht schicken.
+            Du wurdest noch keiner Gruppe zugeordnet. Warte auf die Zuordnung zu einer Gruppe und drücke dann F5, um die Seite zu aktualisieren. Um den Prozess zu beschleunigen kannst du Nicolas aus Slack eine Nachricht schicken.
           </p>
 
           <button class="btn btn-primary mt-4" onclick="logout()">Logout</button>
 
         </div>
-
-
 
       </div>
     </div>
@@ -184,7 +184,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/7.13.2/firebase-functions.js"></script>
 
   <!-- Import the HSOS firebasetools -->
-  <script src="https://cdn.jsdelivr.net/gh/winf-hsos/firebase-tools@0.90/src/firebase-tools.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/winf-hsos/firebase-tools@0.91/src/firebase-tools.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.js"></script>
 
   <script src="js/common.js" defer></script>

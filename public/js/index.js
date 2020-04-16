@@ -7,7 +7,7 @@ setInterval(1000 * 60 * 5, updateView);
 
 const isAdmin =
   firebasetools.getURLParameterByName("admin", window.location) || false;
-
+console.log(isAdmin);
 
 const db = firebase.firestore();
 
@@ -359,32 +359,13 @@ function loginChanged(user) {
 function updateGroup() {
   var dropDown = document.querySelector("#groupsDropdown");
   groupId = dropDown.value;
-  stopListening();
   getScreenNamesForGroup();
   updateView();
 }
 
 function login() {
-  document.querySelector("#errorMessage").textContent = "";
-  firebasetools.login(null, null, loginFailed, loginSuccess);
-}
-
-function loginSuccess(auth) {
-  console.log("Logged in user >" + auth.user.email + "<");
-}
-
-function loginFailed(error) {
-
-  if (error.code === "auth/invalid-email") {
-    document.querySelector("#errorMessage").textContent = "Kein gültiges E-Mail Format.";
-  }
-  else if (error.code === "auth/wrong-password") {
-    document.querySelector("#errorMessage").textContent = "Das Passwort ist ungültig.";
-  }
-  else if (error.code === "auth/user-not-found") {
-    document.querySelector("#errorMessage").textContent = "Dieser Benutzer existiert nicht.";
-
-  }
+  console.log("Someone clicked login.");
+  firebasetools.login();
 }
 
 function logout() {

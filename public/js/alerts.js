@@ -1,4 +1,5 @@
 var toastNo = 0;
+var welcomeToastId;
 
 function createUserExistsAlert(screenName) {
   var toast = document.createElement("div");
@@ -70,6 +71,7 @@ function createWelcomeAlert(user, groups) {
   }
 
   let toastId = "toast" + toastNo++;
+  welcomeToastId = toastId;
   toast.setAttribute("id", toastId);
   toast.innerHTML =
     `
