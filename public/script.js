@@ -58,10 +58,10 @@ function addScreenName() {
         // TODO: Output message modal to inform user
         console.log(
           "The screen name >" +
-            screenName +
-            "< already exists for user >" +
-            groupId +
-            "<"
+          screenName +
+          "< already exists for user >" +
+          groupId +
+          "<"
         );
 
         createUserExistsAlert(screenName);
@@ -74,7 +74,7 @@ function addScreenName() {
           user_id: groupId,
           screen_name: screenName,
           user_email: user.email
-        }).then(function(result) {
+        }).then(function (result) {
           var result = result.data;
           createAddedScreenNameAlert(screenName);
 
@@ -85,7 +85,7 @@ function addScreenName() {
 
       document.querySelector("#screenName").value = "";
     })
-    .catch(function(error) {
+    .catch(function (error) {
       console.log("Error getting document:", error);
     });
 }
@@ -100,7 +100,7 @@ function getTweets(screenName) {
   checkAccounts({
     user_id: groupId,
     screen_name: screenName
-  }).then(function(result) {
+  }).then(function (result) {
     var result = result.data;
     createCheckingForTweetsDoneAlert(
       toastId,
@@ -115,7 +115,7 @@ function getScreenNamesForGroup() {
     .collection("accounts")
     .doc(groupId)
     .collection("screen_names")
-    .onSnapshot(function(items) {
+    .onSnapshot(function (items) {
       screenNameArray = [];
       items.forEach(item => {
         screenNameArray.push(item.data());
@@ -125,9 +125,11 @@ function getScreenNamesForGroup() {
     });
 }
 
-function getGroupForUser() {
+function getGroupsForUser() {
   let email = firebase.auth().currentUser.email;
   var ref = db.collection("accounts").where("users", "array-contains", email);
+
+  var groups = [];
 
   return new Promise((resolve, reject) => {
     return ref.get().then(snapshot => {
@@ -137,17 +139,20 @@ function getGroupForUser() {
 
       console.log(
         "Found >" +
-          snapshot.size +
-          "< group assignement for user >" +
-          email +
-          "<"
+        snapshot.size +
+        "< group assignements for user >" +
+        email +
+        "<"
       );
 
       snapshot.forEach(doc => {
         let userObj = doc.data();
         userObj.id = doc.id;
-        resolve(userObj);
+        groups.push(userObj);
+
       });
+
+      resolve(groups);
     });
   });
 }
@@ -257,7 +262,7 @@ function refreshScreenName(event) {
       tweets: 0,
       tweets_updated: Date.now()
     })
-    .catch(function(error) {
+    .catch(function (error) {
       console.error("Error removing document: ", error);
     });
 }
@@ -273,7 +278,7 @@ function deleteScreenNameForGroup(event) {
     .update({
       groups: firebase.firestore.FieldValue.arrayRemove(deleteForGroup)
     })
-    .catch(function(error) {
+    .catch(function (error) {
       console.error("Error removing document: ", error);
     });
 }
@@ -285,7 +290,7 @@ function exportData() {
   exportTable({
     user_id: groupId
   })
-    .then(function(result) {
+    .then(function (result) {
       var result = result.data;
 
       if (result.success === true) {
@@ -306,7 +311,7 @@ function exportData() {
 async function runProcess(group, requestId) {
   const response = await fetch(
     "https://us-central1-big-data-analytics-helper.cloudfunctions.net/processData?group=" +
-      group,
+    group,
     {
       mode: "no-cors"
     }
@@ -334,18 +339,28 @@ function loginChanged(user) {
     document.querySelector("#listRow").removeAttribute("hidden");
     document.querySelector("#loginRow").setAttribute("hidden", "");
 
-    getGroupForUser()
-      .then(groupObj => {
-        groupId = groupObj.id;
-        remainingExportQuota = groupObj.remaining_export_quota;
+    getGroupsForUser()
+      .then(groups => {
+        remainingExportQuota = groups[0].remaining_export_quota;
+
+        // Select the first group by default
+        groupId = groups[0].id;
+
         getScreenNamesForGroup();
-        createWelcomeAlert(firebase.auth().currentUser.email, groupId);
+        createWelcomeAlert(firebase.auth().currentUser.email, groups);
       })
       .catch(e => {
         console.error(e);
         createNoGroupFoundAlert(firebase.auth().currentUser.email);
       });
   }
+}
+
+function updateGroup() {
+  var dropDown = document.querySelector("#groupsDropdown");
+  groupId = dropDown.value;
+  getScreenNamesForGroup();
+  updateView();
 }
 
 function login() {

@@ -1,4 +1,5 @@
 var toastNo = 0;
+var welcomeToastId;
 
 function createUserExistsAlert(screenName) {
   var toast = document.createElement("div");
@@ -48,7 +49,7 @@ function createNoGroupFoundAlert(user) {
         <div class="toast-body">
           Couldn't find a group assignment for user with email ` +
     user +
-    `<br><button class="mt-2 btn btn-outline-secondary btn-sm" onclick="logout()">Logout</button>` + 
+    `<br><button class="mt-2 btn btn-outline-secondary btn-sm" onclick="logout()">Logout</button>` +
     `</div>`;
 
   // Add the toast
@@ -58,12 +59,19 @@ function createNoGroupFoundAlert(user) {
   $("#" + toastId).toast("show");
 }
 
-function createWelcomeAlert(user, group) {
+function createWelcomeAlert(user, groups) {
   var toast = document.createElement("div");
   toast.classList.add("toast");
   toast.setAttribute("data-autohide", false);
 
+  // Create groups options
+  let groupOptions = "";
+  for(var i = 0; i < groups.length; i++) {
+    groupOptions += "<option>" + groups[i].id +  "</option>";
+  }
+
   let toastId = "toast" + toastNo++;
+  welcomeToastId = toastId;
   toast.setAttribute("id", toastId);
   toast.innerHTML =
     `
@@ -76,11 +84,14 @@ function createWelcomeAlert(user, group) {
         <div class="toast-body">
           <strong>` +
     user +
-    `</strong> from <strong>` +
-    group +
     `</strong><br>` +
-    `<button class="mt-2 btn btn-outline-secondary btn-sm" onclick="logout()">Logout</button>` +
-    `</div>`;
+    `<div class="form-group mt-2">
+      <select id="groupsDropdown" class="form-control form-control-sm" id="exampleFormControlSelect1" onchange="updateGroup()">` + 
+        groupOptions + 
+    `</select>
+    </div>
+    <button class="mt-2 btn btn-outline-secondary btn-sm" onclick="logout()">Logout</button>
+    </div>`;
 
   // Add the toast
   var toastsArea = document.querySelector("#toastsArea");
@@ -250,10 +261,10 @@ function createExportStartedAlert() {
 }
 
 function createExportFinishedAlert(originalToastId) {
-  
+
   // Close original toast
   $("#" + originalToastId).toast("hide");
-  
+
   var toast = document.createElement("div");
   toast.classList.add("toast");
   toast.setAttribute("data-autohide", true);
@@ -282,7 +293,7 @@ function createExportFinishedAlert(originalToastId) {
 
 
 function createExportErrorAlert() {
-  
+
   var toast = document.createElement("div");
   toast.classList.add("toast");
   toast.setAttribute("data-autohide", true);
