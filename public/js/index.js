@@ -7,7 +7,7 @@ setInterval(1000 * 60 * 5, updateView);
 
 const isAdmin =
   firebasetools.getURLParameterByName("admin", window.location) || false;
-console.log(isAdmin);
+
 
 const db = firebase.firestore();
 
@@ -147,9 +147,9 @@ function getGroupsForUser() {
 
 function updateView() {
   // Update the export button
-  var exportButton = document.querySelector("#exportBtn");
-  exportButton.textContent = "Export (" + remainingExportQuota + ")";
-
+  var exportButton = document.querySelector("#exportTweetsBtn");
+  exportButton.textContent = "Export Tweets (" + remainingExportQuota + ")";
+  
   if (remainingExportQuota > 0) {
     exportButton.removeAttribute("disabled");
   } else {
@@ -221,11 +221,15 @@ function updateView() {
     item.appendChild(deleteBtn);
     */
 
+
+
     // Info of last update
     var timeSpan = document.createElement("span");
     timeSpan.style = "font-size:12px; margin-left:12px; color: #5a5a5a;";
-    timeSpan.innerHTML = "total tweets: <b>" + s.num_tweets + "</b>&nbsp;";
-    timeSpan.innerHTML += "| last updated ";
+    timeSpan.innerHTML = "tweets: <b>" + s.num_tweets + "</b>&nbsp;";
+    timeSpan.innerHTML += " | followers: <b>" + s.num_tweets + "</b>&nbsp;";
+    timeSpan.innerHTML += "| updated ";
+
 
     if (s.last_updated) {
       timeSpan.innerHTML += moment(s.last_updated.toDate()).fromNow();
@@ -233,8 +237,12 @@ function updateView() {
       timeSpan.innerHTML += moment(s.last_updated.toDate()).fromNow();
     }
 
+    timeSpan.innerHTML += ` | <a href='#' onclick='updateFollowersForScreenName("${s.screen_name}"); return false;'>update followers</a>`;
+
     item.appendChild(timeSpan);
+
     list.appendChild(item);
+
   });
 }
 
@@ -271,9 +279,9 @@ function deleteScreenNameForGroup(event) {
     });
 }
 
-function exportData() {
+function exportTweetsData() {
   var toastId = createExportStartedAlert();
-  var exportTable = firebase.functions().httpsCallable("exportTableCallable");
+  var exportTable = firebase.functions().httpsCallable("exportTweetsTableCallable");
 
   exportTable({
     user_id: groupId
@@ -295,6 +303,32 @@ function exportData() {
       createExportErrorAlert();
     });
 }
+
+function exportFollowersData() {
+  var toastId = createExportStartedAlert();
+  var exportTable = firebase.functions().httpsCallable("exportFollowersTableCallable");
+
+  exportTable({
+    user_id: groupId
+  })
+    .then(function (result) {
+      var result = result.data;
+
+      if (result.success === true) {
+        createExportFinishedAlert(toastId);
+      } else {
+        createExportErrorAlert();
+      }
+
+      updateView();
+    })
+    .catch(e => {
+      console.dir(e);
+      createExportErrorAlert();
+    });
+
+}
+
 
 async function runProcess(group, requestId) {
   const response = await fetch(
@@ -359,13 +393,32 @@ function loginChanged(user) {
 function updateGroup() {
   var dropDown = document.querySelector("#groupsDropdown");
   groupId = dropDown.value;
+  stopListening();
   getScreenNamesForGroup();
   updateView();
 }
 
 function login() {
-  console.log("Someone clicked login.");
-  firebasetools.login();
+  document.querySelector("#errorMessage").textContent = "";
+  firebasetools.login(null, null, loginFailed, loginSuccess);
+}
+
+function loginSuccess(auth) {
+  console.log("Logged in user >" + auth.user.email + "<");
+}
+
+function loginFailed(error) {
+
+  if (error.code === "auth/invalid-email") {
+    document.querySelector("#errorMessage").textContent = "Kein gültiges E-Mail Format.";
+  }
+  else if (error.code === "auth/wrong-password") {
+    document.querySelector("#errorMessage").textContent = "Das Passwort ist ungültig.";
+  }
+  else if (error.code === "auth/user-not-found") {
+    document.querySelector("#errorMessage").textContent = "Dieser Benutzer existiert nicht.";
+
+  }
 }
 
 function logout() {
@@ -381,4 +434,40 @@ function logout() {
   while (list.firstChild) {
     list.removeChild(list.firstChild);
   }
+}
+
+
+function updateFollowersForScreenName(screen_name) {
+  console.log("Updating followers for screen_name >" + screen_name + "<");
+  console.log("Group ID: " + groupId);
+
+  const followerRequestRef = db.collection("accounts").doc(groupId).collection("followers").doc(screen_name);
+
+  followerRequestRef.get()
+    .then((docSnapshot) => {
+      if (docSnapshot.exists) {
+        usersRef.onSnapshot((doc) => {
+          doc.update({
+            cursor: -1,
+            status: "open",
+            date_last_update_requested: firebase.firestore.FieldValue.serverTimestamp(),
+            error_message: "",
+            followers_fetched: 0
+          })
+            .catch(function (error) {
+              console.error("Error adding followers update request: ", error);
+            });
+        });
+      } else {
+        followerRequestRef.set({
+          cursor: -1,
+          status: "open",
+          date_added: firebase.firestore.FieldValue.serverTimestamp(),
+          date_last_update_requested: firebase.firestore.FieldValue.serverTimestamp(),
+          error_message: "",
+          followers_fetched: 0
+        })
+      }
+    });
+
 }
