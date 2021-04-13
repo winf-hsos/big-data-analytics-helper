@@ -66,8 +66,9 @@ function addScreenName() {
           var result = result.data;
           createAddedScreenNameAlert(screenName);
 
-          // Directly start getting tweets
+          // Directly start getting tweets and profile
           getTweets(screenName);
+          getProfile(screenName);
         });
       }
 
@@ -95,6 +96,17 @@ function getTweets(screenName) {
       result.num_tweets,
       result.screen_name
     );
+  });
+}
+
+function getProfile(screenName) {
+  var updateProfile = firebase
+    .functions()
+    .httpsCallable("updateProfileForScreenNameCallable");
+
+  updateProfile({
+    groupId: groupId,
+    screenName: screenName
   });
 }
 
@@ -149,7 +161,7 @@ function updateView() {
   // Update the export button
   var exportButton = document.querySelector("#exportTweetsBtn");
   exportButton.textContent = "Export Tweets (" + remainingExportQuota + ")";
-  
+
   if (remainingExportQuota > 0) {
     exportButton.removeAttribute("disabled");
   } else {
@@ -187,47 +199,12 @@ function updateView() {
       s.screen_name +
       "</a>";
 
-    // Delete icon
-    /*
-    var deleteBtn = document.createElement("button");
-    deleteBtn.classList.add("btn");
-    deleteBtn.classList.add("btn-light");
-    deleteBtn.classList.add("btn-small");
-    deleteBtn.style = "margin-left:16px";
-    deleteBtn.dataset.screen_name = s.screen_name;
-    deleteBtn.innerHTML =
-      '<span class="fas fa-trash" style="color:#444444" data-screen_name="' +
-      s.screen_name +
-      '"></span>';
-    
-    deleteBtn.addEventListener("click", deleteScreenNameForGroup);
-    item.appendChild(refreshBtn);
-    */
-
-    // Refresh button
-    /*
-    var refreshBtn = document.createElement("button");
-    refreshBtn.classList.add("btn");
-    refreshBtn.classList.add("btn-light");
-    refreshBtn.classList.add("btn-small");
-    refreshBtn.style = "margin-left:16px";
-    refreshBtn.dataset.screen_name = s.screen_name;
-    refreshBtn.innerHTML =
-      '<span class="fas fa-redo" style="color:#444444" data-screen_name="' +
-      s.screen_name +
-      '"></span>';
-    
-    refreshBtn.addEventListener("click", refreshScreenName);
-    item.appendChild(deleteBtn);
-    */
-
-
 
     // Info of last update
     var timeSpan = document.createElement("span");
     timeSpan.style = "font-size:12px; margin-left:12px; color: #5a5a5a;";
     timeSpan.innerHTML = "tweets: <b>" + s.num_tweets + "</b>&nbsp;";
-    timeSpan.innerHTML += " | followers: <b>" + s.num_tweets + "</b>&nbsp;";
+    timeSpan.innerHTML += " | followers: <b>" + (s.num_followers || "-") + "</b>&nbsp;";
     timeSpan.innerHTML += "| updated ";
 
 
@@ -238,6 +215,7 @@ function updateView() {
     }
 
     timeSpan.innerHTML += ` | <a href='#' onclick='updateFollowersForScreenName("${s.screen_name}"); return false;'>update followers</a>`;
+    timeSpan.innerHTML += ` | <a href='#' onclick='updateProfileForScreenName("${s.screen_name}"); return false;'>update profile</a>`;
 
     item.appendChild(timeSpan);
 
@@ -246,38 +224,7 @@ function updateView() {
   });
 }
 
-function refreshScreenName(event) {
-  var screenNameToRefresh = event.target.dataset.screen_name;
 
-  db.collection("screennames")
-    .doc(screenNameToRefresh)
-    .update({
-      marker: -1,
-      status: "2_waiting",
-      phase: "timeline",
-      tweets: 0,
-      tweets_updated: Date.now()
-    })
-    .catch(function (error) {
-      console.error("Error removing document: ", error);
-    });
-}
-
-function deleteScreenNameForGroup(event) {
-  var screenNameToDelete = event.target.dataset.screen_name;
-
-  var currentUser = firebase.auth().currentUser;
-  var deleteForGroup = currentUser.email.split("@")[0];
-
-  db.collection("screennames")
-    .doc(screenNameToDelete)
-    .update({
-      groups: firebase.firestore.FieldValue.arrayRemove(deleteForGroup)
-    })
-    .catch(function (error) {
-      console.error("Error removing document: ", error);
-    });
-}
 
 function exportTweetsData() {
   var toastId = createExportStartedAlert();
@@ -329,21 +276,33 @@ function exportFollowersData() {
 
 }
 
+function exportProfileData() {
 
-async function runProcess(group, requestId) {
-  const response = await fetch(
-    "https://us-central1-big-data-analytics-helper.cloudfunctions.net/processData?group=" +
-    group,
-    {
-      mode: "no-cors"
-    }
-  );
+  var toastId = createExportStartedAlert();
+  var exportTable = firebase.functions().httpsCallable("exportProfilesTableCallable");
 
-  // Update process request
-  db.collection("processrequests")
-    .doc(requestId)
-    .update({ status: "done" });
+  exportTable({
+    user_id: groupId
+  })
+    .then(function (result) {
+      var result = result.data;
+
+      if (result.success === true) {
+        createExportFinishedAlert(toastId);
+      } else {
+        createExportErrorAlert();
+      }
+
+      updateView();
+    })
+    .catch(e => {
+      console.dir(e);
+      createExportErrorAlert();
+    });
+
+
 }
+
 
 /* LOGIN */
 
@@ -436,7 +395,6 @@ function logout() {
   }
 }
 
-
 function updateFollowersForScreenName(screen_name) {
   console.log("Updating followers for screen_name >" + screen_name + "<");
   console.log("Group ID: " + groupId);
@@ -468,6 +426,34 @@ function updateFollowersForScreenName(screen_name) {
           followers_fetched: 0
         })
       }
+    });
+}
+
+function updateProfileForScreenName(screen_name) {
+  console.log("Updating profile for screen_name >" + screen_name + "<");
+  //console.log("Group ID: " + groupId);
+
+  var toastId = createUpdateProfileAlert(screen_name);
+  var updateProfileForScreenNameCallable = firebase.functions().httpsCallable("updateProfileForScreenNameCallable");
+
+  updateProfileForScreenNameCallable({
+    groupId: groupId,
+    screenName: screen_name
+  })
+    .then(function (result) {
+      var result = result.data;
+
+      if (result.success === true) {
+        createUpdateProfileFinishedAlert(toastId);
+      } else {
+        createUpdateProfileErrorAlert(toastId);
+      }
+
+      updateView();
+    })
+    .catch(e => {
+      console.dir(e);
+      createUpdateProfileErrorAlert(toastId);
     });
 
 }

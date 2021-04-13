@@ -66,8 +66,8 @@ function createWelcomeAlert(user, groups) {
 
   // Create groups options
   let groupOptions = "";
-  for(var i = 0; i < groups.length; i++) {
-    groupOptions += "<option>" + groups[i].id +  "</option>";
+  for (var i = 0; i < groups.length; i++) {
+    groupOptions += "<option>" + groups[i].id + "</option>";
   }
 
   let toastId = "toast" + toastNo++;
@@ -86,8 +86,8 @@ function createWelcomeAlert(user, groups) {
     user +
     `</strong><br>` +
     `<div class="form-group mt-2">
-      <select id="groupsDropdown" class="form-control form-control-sm" id="exampleFormControlSelect1" onchange="updateGroup()">` + 
-        groupOptions + 
+      <select id="groupsDropdown" class="form-control form-control-sm" id="exampleFormControlSelect1" onchange="updateGroup()">` +
+    groupOptions +
     `</select>
     </div>
     <button class="mt-2 btn btn-outline-secondary btn-sm" onclick="logout()">Logout</button>
@@ -188,6 +188,41 @@ function createCheckingForTweetsAlert(screenName) {
   $("#" + toastId).toast("show");
 
   return toastId;
+}
+
+function createUpdateProfileAlert(screenName) {
+
+  var toast = document.createElement("div");
+  toast.classList.add("toast");
+  toast.setAttribute("data-autohide", false);
+
+  let toastId = "toast" + toastNo++;
+  toast.setAttribute("id", toastId);
+  toast.innerHTML =
+    `
+    <div class="toast-header">
+      <div class="spinner-grow spinner-grow-sm mr-1" role="status"></div>
+      <strong class="mr-auto">WORKING</strong>
+      <button type="button" class="ml-2 mb-1 close" data-dismiss="toast">
+        &times;
+      </button>
+    </div>
+    <div class="toast-body">
+      Getting profile for <a href="https://twitter.com/"` +
+    screenName +
+    `">` +
+    screenName +
+    `</a>` +
+    `</div>`;
+
+  // Add the toast
+  var toastsArea = document.querySelector("#toastsArea");
+  toastsArea.appendChild(toast);
+
+  $("#" + toastId).toast("show");
+
+  return toastId;
+
 }
 
 function createCheckingForTweetsDoneAlert(
@@ -291,6 +326,38 @@ function createExportFinishedAlert(originalToastId) {
   $("#" + toastId).toast("show");
 }
 
+function createUpdateProfileFinishedAlert(originalToastId) {
+
+  // Close original toast
+  $("#" + originalToastId).toast("hide");
+
+  var toast = document.createElement("div");
+  toast.classList.add("toast");
+  toast.setAttribute("data-autohide", true);
+  toast.setAttribute("data-delay", 5000);
+
+  let toastId = "toast" + toastNo++;
+  toast.setAttribute("id", toastId);
+  toast.innerHTML =
+    `
+    <div class="toast-header">
+      <strong class="mr-auto">DONE</strong>
+      <button type="button" class="ml-2 mb-1 close" data-dismiss="toast">
+        &times;
+      </button>
+    </div>
+    <div class="toast-body">
+      Finished fetching profile!
+    </div>`;
+
+  // Add the toast
+  var toastsArea = document.querySelector("#toastsArea");
+  toastsArea.appendChild(toast);
+
+  $("#" + toastId).toast("show");
+
+}
+
 
 function createExportErrorAlert() {
 
@@ -318,4 +385,36 @@ function createExportErrorAlert() {
   toastsArea.appendChild(toast);
 
   $("#" + toastId).toast("show");
+}
+
+
+function createUpdateProfileErrorAlert(originalToastId) {
+
+  $("#" + originalToastId).toast("hide");
+
+  var toast = document.createElement("div");
+  toast.classList.add("toast");
+  toast.setAttribute("data-autohide", true);
+  toast.setAttribute("data-delay", 10000);
+
+  let toastId = "toast" + toastNo++;
+  toast.setAttribute("id", toastId);
+  toast.innerHTML =
+    `
+    <div class="toast-header">
+      <strong class="mr-auto">ERROR</strong>
+      <button type="button" class="ml-2 mb-1 close" data-dismiss="toast">
+        &times;
+      </button>
+    </div>
+    <div class="toast-body">
+      Fetching profile failed. Ask Nicolas what to do!
+    </div>`;
+
+  // Add the toast
+  var toastsArea = document.querySelector("#toastsArea");
+  toastsArea.appendChild(toast);
+
+  $("#" + toastId).toast("show");
+
 }
